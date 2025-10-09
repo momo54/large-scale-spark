@@ -1,0 +1,9 @@
+src,dst
+A,B
+A,C
+B,C
+C,A
+D,C
+E,B
+F,C
+G,A
