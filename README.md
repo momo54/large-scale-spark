@@ -148,9 +148,12 @@ docker exec -it spark-master bash -lc 'HOME=/home/spark PYSPARK_PYTHON=python3 /
 Dans le REPL PySpark:
 
 ```python
+sc = spark.sparkContext
 sc.setLogLevel("WARN")
-sc.parallelize(range(10)).sum()
-spark.range(10).count()
+rdd1=sc.parallelize(range(100))
+print(rdd1.count())
+rdd2=rdd1.filter(lambda ?x: x<50)
+print(rdd2.count())
 
 # Lecture depuis le volume partagé (RO)
 df = spark.read.option("header", True).csv("/data/data/sample.csv")
