@@ -62,6 +62,7 @@ services:
     hostname: jupyter
     ports:
       - "8888:8888"
+      - "4040:4040"
     volumes:
       - ./:/home/jovyan/work
       - ./:/data:ro

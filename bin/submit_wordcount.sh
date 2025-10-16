@@ -15,8 +15,15 @@ OUTPUT="${2:-/shared/mobydick_wc}"
 
 mkdir -p "$ROOT/output"
 
+DOCKER_PUBLISH=""
+if [ -n "${PUBLISH_4040:-}" ]; then
+  # allow PUBLISH_4040 to be just a port number (host:container mapping will be host:4040->4040)
+  DOCKER_PUBLISH="-p ${PUBLISH_4040}:4040"
+fi
+
 exec docker run --rm \
   --network "$NETWORK" \
+  $DOCKER_PUBLISH \
   -v "$ROOT":/work \
   -v "$ROOT"/output:/shared \
   -v "$ROOT":/data:ro \
