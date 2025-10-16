@@ -27,6 +27,8 @@ Exécuter le script CLI :
 
 ```bash
 python src/run_sample.py
+python src/wordcount.py
+
 ```
 
 
