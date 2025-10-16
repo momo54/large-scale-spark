@@ -54,7 +54,8 @@ Volumes partagés dans les conteneurs
 - `/shared` (lecture/écriture) monte `./output` du host dans tous les conteneurs. Les jobs Spark peuvent y écrire des résultats visibles côté host dans `output/`.
 
 Démarrage (depuis la racine du projet) :
-- Lance le cluster avec le script fourni. Le service Jupyter sera accessible sans token sur http://localhost:8888 et le Spark Master UI sur http://localhost:8080.
+- Lance le cluster avec le script fourni. Les services:
+- Le service Jupyter sera accessible sans token sur http://localhost:8888 et le Spark Master UI sur http://localhost:8080 et les jobs locaux sur http://localhost:4040
 - Si tu modifies `docker-compose.yml`, relance le cluster pour prendre en compte les volumes/paramètres.
 
 Démarrer/arrêter uniquement Jupyter
