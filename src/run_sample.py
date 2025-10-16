@@ -10,6 +10,7 @@ def main():
     os.makedirs(out_dir, exist_ok=True)
 
     spark = SparkSession.builder.master("local[*]").appName("sample_pyspark_project").getOrCreate()
+    spark.sparkContext.setLogLevel("INFO")
 
     df = spark.read.option("header", True).option("inferSchema", True).csv(data_path)
     print("--- Schéma du DataFrame ---")

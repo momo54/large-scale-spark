@@ -23,17 +23,19 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Lancer le notebook :
-
-```bash
-jupyter notebook notebooks/analysis.ipynb
-```
-
 Exécuter le script CLI :
 
 ```bash
 python src/run_sample.py
 ```
+
+
+Lancer le notebook :
+
+```bash
+jupyter notebook notebooks/intro.ipynb
+```
+
 
 Notes
 - Si tu rencontres des erreurs liées à Java, vérifie que `JAVA_HOME` est correctement défini et que `java -version` renvoie une version 11+.
@@ -136,6 +138,53 @@ Tu peux ensuite lister la sortie côté host:
 ls -la output/verify_cluster_out
 ```
 
+Soumettre le WordCount (script fourni)
+-------------------------------------
+
+Un petit job WordCount est fourni en `src/wordcount.py` (prêt pour `spark-submit`). Pour simplifier la soumission vers le cluster Docker local, un helper shell est disponible : `bin/submit_wordcount.sh`.
+
+Usage simple (depuis la racine du projet) :
+
+```bash
+./bin/submit_wordcount.sh
+```
+
+Par défaut le script utilise :
+- input : `/data/data/mobydick.txt` (contenu attendu dans `data/` du repo — accessible dans les conteneurs via `/data`)
+- output : `/shared/mobydick_wc` (côté host : `./output/mobydick_wc`)
+
+Tu peux préciser manuellement input et output (chemins vus par le conteneur) :
+
+```bash
+./bin/submit_wordcount.sh /data/data/mobydick.txt /shared/mobydick_wc
+```
+
+Le script lance un conteneur éphémère basé sur l'image Spark du compose et exécute :
+
+```
+/opt/spark/bin/spark-submit --master spark://spark-master:7077 /work/src/wordcount.py <input> <output>
+```
+
+Après réussite tu trouveras un dossier CSV dans `./output/mobydick_wc` (un seul fichier CSV coalescé avec en-tête `word,count`).
+
+Si tu préfères lancer manuellement sans le helper, voici l'équivalent `docker run` :
+
+```bash
+docker run --rm \
+	--network "${PWD##*/}_default" \
+	-v "$(pwd)":/work \
+	-v "$(pwd)"/output:/shared \
+	-v "$(pwd)":/data:ro \
+	-w /work \
+	spark:4.0.0-java21-python3 \
+	/opt/spark/bin/spark-submit --master spark://spark-master:7077 /work/src/wordcount.py /data/data/mobydick.txt /shared/mobydick_wc
+```
+
+Conseils :
+- Rends le helper exécutable si besoin : `chmod +x bin/submit_wordcount.sh`.
+- Vérifie l'UI du Master et les logs pour suivre la progression du job.
+
+
 REPL PySpark interactif (sans Jupyter)
 --------------------------------------
 
@@ -152,7 +201,7 @@ sc = spark.sparkContext
 sc.setLogLevel("WARN")
 rdd1=sc.parallelize(range(100))
 print(rdd1.count())
-rdd2=rdd1.filter(lambda ?x: x<50)
+rdd2=rdd1.filter(lambda x: x<50)
 print(rdd2.count())
 
 # Lecture depuis le volume partagé (RO)
