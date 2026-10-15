@@ -8,6 +8,10 @@ USER root
 RUN apt-get update && apt-get install -y python3-pip && rm -rf /var/lib/apt/lists/*
 RUN pip3 install --no-cache-dir jupyterlab pandas matplotlib pyspark==${PYSPARK_VERSION}
 
+# The driver (jovyan, uid 1000) and the executors (spark, uid 185) both write into
+# /shared: make the directories and files Spark creates writable by everyone
+RUN mkdir -p /opt/spark/conf && echo "spark.hadoop.fs.permissions.umask-mode 000" >> /opt/spark/conf/spark-defaults.conf
+
 ENV PYSPARK_PYTHON=python3
 ENV SPARK_HOME=/opt/spark
 

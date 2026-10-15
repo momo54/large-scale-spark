@@ -14,6 +14,7 @@ INPUT="${1:-/data/data/mobydick.txt}"
 OUTPUT="${2:-/shared/mobydick_wc}"
 
 mkdir -p "$ROOT/output"
+chmod a+rwx "$ROOT/output" 2>/dev/null || sudo chmod a+rwx "$ROOT/output" || true
 
 DOCKER_PUBLISH=""
 if [ -n "${PUBLISH_4040:-}" ]; then
@@ -29,4 +30,4 @@ exec docker run --rm \
   -v "$ROOT":/data:ro \
   -w /work \
   "$IMAGE" \
-  /opt/spark/bin/spark-submit --master "$MASTER" /work/src/wordcount.py "$INPUT" "$OUTPUT"
+  /opt/spark/bin/spark-submit --master "$MASTER" --conf spark.hadoop.fs.permissions.umask-mode=000 /work/src/wordcount.py "$INPUT" "$OUTPUT"
