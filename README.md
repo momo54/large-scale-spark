@@ -10,8 +10,8 @@ Contenu créé :
 - `.gitignore`
 
 Pré-requis
-- Python 3.8+
-- Java 11+ (nécessaire pour PySpark)
+- Python 3.10+ (`pip install -r requirements.txt` installe PySpark 4)
+- Java 17+ (nécessaire pour Spark 4 ; Java 21 recommandé)
 - (Optionnel) Environnement virtuel recommandé
 
 Installation rapide (zsh) :
@@ -27,8 +27,7 @@ Exécuter le script CLI :
 
 ```bash
 python src/run_sample.py
-python src/wordcount.py
-
+python src/wordcount.py data/mobydick.txt output/mobydick_wc
 ```
 
 
@@ -42,6 +41,7 @@ jupyter notebook notebooks/intro.ipynb
 Notes
 - Si tu rencontres des erreurs liées à Java, vérifie que `JAVA_HOME` est correctement défini et que `java -version` renvoie une version 11+.
 - PySpark installe une version de Spark locale via pip, mais si tu as une installation Spark locale préférée, tu peux l'utiliser également.
+- Si Spark échoue au démarrage avec `java.net.BindException: Can't assign requested address: Service 'sparkDriver'`, le nom de ta machine résout vers une mauvaise adresse IP : `export SPARK_LOCAL_IP=127.0.0.1` (par exemple dans `~/.zshrc`).
 
 Cluster Docker local (mode cluster)
 ----------------------------------
@@ -56,14 +56,14 @@ Volumes partagés dans les conteneurs
 - `/shared` (lecture/écriture) monte `./output` du host dans tous les conteneurs. Les jobs Spark peuvent y écrire des résultats visibles côté host dans `output/`.
 
 Démarrage (depuis la racine du projet) :
-- Lance le cluster avec le script fourni. Les services:
+- Lance le cluster avec le script fourni : `./docker/run_cluster.sh`. Il crée `output/` accessible en écriture aux conteneurs et, dans un GitHub Codespace, débloque le trafic entre conteneurs (voir [GitHub Codespaces](#github-codespaces)).
 - Le service Jupyter sera accessible sans token sur http://localhost:8888 et le Spark Master UI sur http://localhost:8080 et les jobs locaux sur http://localhost:4040
 - Si tu modifies `docker-compose.yml`, relance le cluster pour prendre en compte les volumes/paramètres.
 
 Démarrer/arrêter uniquement Jupyter
 -----------------------------------
 
-Quand le cluster est déjà créé, tu peux contrôler seulement le service Jupyter:
+Quand le cluster est déjà créé, tu peux contrôler seulement le service Jupyter. Le master et les workers doivent tourner (`docker compose ps`) : sinon le notebook attend environ 1 minute puis échoue avec `Cannot call methods on a stopped SparkContext`.
 
 - Démarrer/arrêter avec docker compose (recommandé):
 
@@ -99,7 +99,7 @@ docker compose build jupyter && docker compose up -d jupyter
 
 Utilisation du notebook en mode cluster
 - Le notebook `notebooks/analysis.ipynb` détecte automatiquement le mode cluster via `SPARK_MASTER` (défini dans `docker-compose.yml`).
-- En mode cluster, il lit les fichiers depuis `/data` (par exemple `/data/sample.csv`, `/data/edges.csv`) et écrit les sorties dans `/shared` (côté host: `./output`).
+- En mode cluster, il lit les fichiers depuis `/data/data` (par exemple `/data/data/sample.csv`, `/data/data/edges.csv`) et écrit les sorties dans `/shared` (côté host: `./output`).
 - En mode local (sans Docker), il lit et écrit directement dans `data/` et `output/` du repo.
 - Pour le volet PageRank (RDD + map-side join), le notebook partitionne/persist les RDD pour faciliter le map-side join et affiche un diagnostic de shuffles.
 
@@ -107,6 +107,14 @@ Arrêt du cluster : utilise `docker/stop_cluster.sh`.
 
 Sécurité
 - Jupyter démarre sans token pour simplifier les essais locaux. Ne l'expose pas sur un réseau public.
+
+GitHub Codespaces
+-----------------
+
+Dans un Codespace, démarre toujours le cluster avec `./docker/run_cluster.sh` (et relance-le après chaque redémarrage du Codespace) :
+
+- Docker y garde parfois d'anciennes règles `iptables-legacy` (politique `FORWARD DROP`, seul `docker0` autorisé) qui bloquent le trafic entre les conteneurs du réseau compose. Symptômes : aucun worker dans la Master UI (port 8080), et le driver affiche trois `Connecting to master spark://spark-master:7077...`, puis `All masters are unresponsive! Giving up.` et `Cannot call methods on a stopped SparkContext`. Le script remet cette politique à `ACCEPT` (`sudo iptables-legacy -P FORWARD ACCEPT`).
+- Sous Linux, les droits des fichiers comptent : le driver Jupyter (uid 1000) et les executors (uid 185) écrivent tous deux dans `/shared`. Le script crée `output/` en `777`, et les drivers écrivent avec `spark.hadoop.fs.permissions.umask-mode=000` (dans l'image Jupyter et dans les scripts `bin/`).
 
 Vérifier le cluster sans Jupyter (spark-submit)
 -----------------------------------------------

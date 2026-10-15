@@ -10,6 +10,7 @@ IMAGE="${SPARK_IMAGE:-spark:4.0.0-java21-python3}"
 MASTER="${SPARK_MASTER:-spark://spark-master:7077}"
 
 mkdir -p "$ROOT/output"
+chmod a+rwx "$ROOT/output" 2>/dev/null || sudo chmod a+rwx "$ROOT/output" || true
 
 exec docker run --rm \
   --network "$NETWORK" \
@@ -18,4 +19,4 @@ exec docker run --rm \
   -v "$ROOT":/data:ro \
   -w /work \
   "$IMAGE" \
-  /opt/spark/bin/spark-submit --master "$MASTER" /work/src/verify_cluster.py
+  /opt/spark/bin/spark-submit --master "$MASTER" --conf spark.hadoop.fs.permissions.umask-mode=000 /work/src/verify_cluster.py

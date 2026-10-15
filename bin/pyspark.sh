@@ -18,10 +18,11 @@ if [ $# -gt 0 ]; then
 fi
 
 mkdir -p "$ROOT/output"
+chmod a+rwx "$ROOT/output" 2>/dev/null || sudo chmod a+rwx "$ROOT/output" || true
 
 exec docker run --rm -it \
   --network "$NETWORK" \
   -v "$ROOT":/data:ro \
   -v "$ROOT"/output:/shared \
   "$IMAGE" \
-  bash -lc "/opt/spark/bin/pyspark --master $MASTER$ARGS"
+  bash -lc "/opt/spark/bin/pyspark --master $MASTER --conf spark.hadoop.fs.permissions.umask-mode=000$ARGS"
